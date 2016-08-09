@@ -1,2 +1,1 @@
-py3exiv2==0.1.0
-pygobject==3.20.1
+pexif==0.15

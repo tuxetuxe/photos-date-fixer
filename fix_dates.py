@@ -1,11 +1,16 @@
 # !/usr/bin/python
 import os
+from PIL.ExifTags import TAGS
+
 import sys
 import re
 import datetime
-from gi.repository import GExiv2
+from pexif import JpegFile
+
+TIME_FORMAT = '%Y:%m:%d %H:%M:%S'
 
 DRY_RUN = len(sys.argv) == 3 and sys.argv[2] == 'dr'
+DEBUG = False
 
 if DRY_RUN:
     print('######################################')
@@ -30,20 +35,50 @@ def get_date_from_path(path):
         return 'N/A'
 
 
-def fix_file_date(exif_info, new_date):
-    exif_info['Exif.Image.DateTime'] = new_date
-    exif_info['Exif.Photo.DateTimeDigitized'] = new_date
-    exif_info['Exif.Photo.DateTimeOriginal'] = new_date
+def get_exif_info(file):
+    exif = file.get_exif(create=True)
+
+    if DEBUG:
+        file.dump()
+
+    if exif:
+        primary = exif.get_primary()
+
+    if exif is None or primary is None:
+        primary = {}
+
+    return primary
+
+def fix_file_date(file, file_path, exif_info, new_date):
+    date_to_use = new_date.strftime(TIME_FORMAT)
+    try:
+        date_to_use = exif_info.ExtendedEXIF.DateTimeOriginal
+    except AttributeError:
+        pass
+
+    try:
+        date_to_use = exif_info.ExtendedEXIF.DateTimeDigitized
+    except AttributeError:
+        pass
+
+    exif_info.DateTime = date_to_use
 
     if DRY_RUN == False:
-        exif_info.save_file()
+        print('    Saving file...')
+        try:
+            file.writeFile(file_path)
+        except IOError:
+            type, value, traceback = sys.exc_info()
+            print >> sys.stderr, "Error saving %s:" % file_path, value
 
 
 def file_needs_date_fix(exif_info):
-    date_time = exif_info.get_date_time()
+    try:
+        dateTime = exif_info.DateTime
 
-    return date_time is None
-
+        return dateTime is not None
+    except AttributeError:
+        return True
 
 def check_folder(folder):
     for root, sub_folders, files in os.walk(folder):
@@ -60,11 +95,12 @@ def check_folder(folder):
                 file_path = os.path.join(root, filename)
 
                 print('  image: ' + file_path)
-                exif_info = GExiv2.Metadata()
-                exif_info.open_path(file_path)
-                if file_needs_date_fix(exif_info):
+
+                pexif_file = JpegFile.fromFile(file_path)
+                exif = get_exif_info(pexif_file)
+                if file_needs_date_fix(exif):
                     print('    FIX TO DATE = ' + folder_name_date.strftime("%Y/%m/%d"))
-                    fix_file_date(exif_info, folder_name_date)
+                    fix_file_date(pexif_file, file_path, exif, folder_name_date)
 
 
 # --------
@@ -73,6 +109,12 @@ def check_folder(folder):
 
 base_folder = sys.argv[1]
 
-print('base_folder = ' + base_folder + ' (' + os.path.abspath(base_folder) + ')')
+def main():
+    print('base_folder = ' + base_folder + ' (' + os.path.abspath(base_folder) + ')')
 
-check_folder(base_folder)
+    check_folder(base_folder)
+
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())

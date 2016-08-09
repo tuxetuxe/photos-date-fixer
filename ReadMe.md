@@ -1,19 +1,16 @@
+# Photos date fixer
 
-# OSx dependencies
+Updates the exif information in JPEG files to make sure that there is a Date.
+If the file has no date information, then it gets it from the extended exif information or the file folders in the path.
 
-```
-	brew update
-	brew install gexiv2 pygobject3
-	brew install python3
+**The updates the original file. Please to a backup of your files before!** 
 
-```
-
+# Setup
 ```
 	pip install -r requirements
 ```
 
+# Execute
 ```
-	
-	source venv/bin/activate 
-	python3 fix_dates.py ../fotos-test/
+	python fix_dates.py ~/photos/
 ```
