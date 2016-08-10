@@ -30,9 +30,12 @@ def get_date_from_path(path):
     if date_re:
         year_number = date_re.group(1)
         month_number = date_re.group(2)
-        return datetime.date(int(year_number), int(month_number), 1)
+        try:
+            return datetime.date(int(year_number), int(month_number), 1)
+        except ValueError:
+            return None
     else:
-        return 'N/A'
+        return None
 
 
 def get_exif_info(file):
@@ -97,6 +100,10 @@ def check_folder(folder):
         if len(files):
             folder_name_date = get_date_from_path(root)
 
+        if folder_name_date is None:
+            print('    Invalid folder path name. Skipping')
+            continue
+            
         for filename in files:
             if filename.lower().endswith('.jpg'):
                 file_path = os.path.join(root, filename)
