@@ -45,7 +45,7 @@ def get_exif_info(file):
         primary = exif.get_primary()
 
     if exif is None or primary is None:
-        primary = {}
+        primary = None
 
     return primary
 
@@ -84,7 +84,7 @@ def file_needs_date_fix(exif_info):
     except AttributeError:
         pass
 
-    return dateTime is None and dateTime_original is None and dateTime_digitized is None;
+    return exif_info is not None and dateTime is None and dateTime_original is None and dateTime_digitized is None;
 
 
 def check_folder(folder):
@@ -101,12 +101,16 @@ def check_folder(folder):
             if filename.lower().endswith('.jpg'):
                 file_path = os.path.join(root, filename)
 
-                pexif_file = JpegFile.fromFile(file_path)
-                exif = get_exif_info(pexif_file)
-                if file_needs_date_fix(exif):
-                    print('  image: ' + file_path)
-                    print('    FIX TO DATE = ' + folder_name_date.strftime("%Y/%m/%d"))
-                    fix_file_date(pexif_file, file_path, exif, folder_name_date)
+                try:
+                    pexif_file = JpegFile.fromFile(file_path)
+                    exif = get_exif_info(pexif_file)
+                    if file_needs_date_fix(exif):
+                        print('  image: ' + file_path)
+                        print('    FIX TO DATE = ' + folder_name_date.strftime("%Y/%m/%d"))
+                        fix_file_date(pexif_file, file_path, exif, folder_name_date)
+                except JpegFile.InvalidFile:
+                    type, value, traceback = sys.exc_info()
+                    print >> sys.stdout, "Error opening file:" + file_path + " -> ", value
 
 
 # --------
