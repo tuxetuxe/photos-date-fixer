@@ -51,17 +51,10 @@ def get_exif_info(file):
 
 def fix_file_date(file, file_path, exif_info, new_date):
     date_to_use = new_date.strftime(TIME_FORMAT)
-    try:
-        date_to_use = exif_info.ExtendedEXIF.DateTimeOriginal
-    except AttributeError:
-        pass
-
-    try:
-        date_to_use = exif_info.ExtendedEXIF.DateTimeDigitized
-    except AttributeError:
-        pass
 
     exif_info.DateTime = date_to_use
+    exif_info.ExtendedEXIF.DateTimeOriginal = date_to_use
+    exif_info.ExtendedEXIF.DateTimeDigitized = date_to_use
 
     if DRY_RUN == False:
         print('    Saving file...')
@@ -73,16 +66,30 @@ def fix_file_date(file, file_path, exif_info, new_date):
 
 
 def file_needs_date_fix(exif_info):
+    dateTime = None
     try:
         dateTime = exif_info.DateTime
-
-        return dateTime is not None
     except AttributeError:
-        return True
+        pass
+
+    dateTime_original = None
+    try:
+        dateTime_original = exif_info.ExtendedEXIF.DateTimeOriginal
+    except AttributeError:
+        pass
+
+    dateTime_digitized = None
+    try:
+        dateTime_digitized = exif_info.ExtendedEXIF.DateTimeDigitized
+    except AttributeError:
+        pass
+
+    return dateTime is None and dateTime_original is None and dateTime_digitized is None;
+
 
 def check_folder(folder):
     for root, sub_folders, files in os.walk(folder):
-        print('\n#########\nfolder = ' + root)
+        print('* ' + root)
 
         for sub_folder in sub_folders:
             check_folder(sub_folder)
@@ -94,11 +101,10 @@ def check_folder(folder):
             if filename.lower().endswith('.jpg'):
                 file_path = os.path.join(root, filename)
 
-                print('  image: ' + file_path)
-
                 pexif_file = JpegFile.fromFile(file_path)
                 exif = get_exif_info(pexif_file)
                 if file_needs_date_fix(exif):
+                    print('  image: ' + file_path)
                     print('    FIX TO DATE = ' + folder_name_date.strftime("%Y/%m/%d"))
                     fix_file_date(pexif_file, file_path, exif, folder_name_date)
 
