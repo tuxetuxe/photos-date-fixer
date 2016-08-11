@@ -103,7 +103,7 @@ def check_folder(folder):
         if folder_name_date is None:
             print('    Invalid folder path name. Skipping')
             continue
-            
+
         for filename in files:
             if filename.lower().endswith('.jpg'):
                 file_path = os.path.join(root, filename)
@@ -115,7 +115,7 @@ def check_folder(folder):
                         print('  image: ' + file_path)
                         print('    FIX TO DATE = ' + folder_name_date.strftime("%Y/%m/%d"))
                         fix_file_date(pexif_file, file_path, exif, folder_name_date)
-                except JpegFile.InvalidFile:
+                except (JpegFile.InvalidFile, AttributeError):
                     type, value, traceback = sys.exc_info()
                     print >> sys.stdout, "Error opening file:" + file_path + " -> ", value
 
