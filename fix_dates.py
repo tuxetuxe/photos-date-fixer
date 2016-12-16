@@ -119,11 +119,6 @@ def check_folder(folder):
                     type, value, traceback = sys.exc_info()
                     print >> sys.stdout, "Error opening file:" + file_path + " -> ", value
 
-
-# --------
-# Main
-# --------
-
 base_folder = sys.argv[1]
 
 def main():
